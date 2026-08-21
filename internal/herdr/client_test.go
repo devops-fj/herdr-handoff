@@ -48,3 +48,11 @@ func TestExtractText(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestAgentLabelIncludesCompactProjectPath(t *testing.T) {
+	agent := Agent{Name: "reviewer", Status: "idle", TabID: "w1:t2", PaneID: "w1:p3", CWD: "/code/opsPlatform/categraf"}
+	got := agent.Label()
+	if got != "reviewer  [idle]  w1:t2  w1:p3  opsPlatform/categraf" {
+		t.Fatalf("got %q", got)
+	}
+}

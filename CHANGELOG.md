@@ -6,6 +6,19 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-21
+
+### Added
+
+- Workspace-scoped agent pickers that keep large Herdr sessions manageable.
+- Cross-workspace search by agent name, kind, status, pane, workspace, or path.
+- Compact project paths in interactive and CLI agent lists.
+
+### Changed
+
+- Prefer explicitly named, ready target agents within the same location scope.
+- Keep all-agent selection available through the interactive `a` command.
+
 ## [0.1.1] - 2026-08-21
 
 ### Fixed
@@ -25,6 +38,7 @@ and the project follows [Semantic Versioning](https://semver.org/).
 - Herdr plugin action and popup entrypoints.
 - Cross-platform CI and GitHub Release automation.
 
-[Unreleased]: https://github.com/devops-fj/herdr-handoff/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/devops-fj/herdr-handoff/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/devops-fj/herdr-handoff/releases/tag/v0.2.0
 [0.1.1]: https://github.com/devops-fj/herdr-handoff/releases/tag/v0.1.1
 [0.1.0]: https://github.com/devops-fj/herdr-handoff/releases/tag/v0.1.0

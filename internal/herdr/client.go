@@ -35,7 +35,28 @@ func (a Agent) Label() string {
 	if location == "" {
 		location = a.Workspace
 	}
-	return fmt.Sprintf("%s  [%s]  %s  %s", name, a.Status, location, a.PaneID)
+	label := fmt.Sprintf("%s  [%s]  %s  %s", name, a.Status, location, a.PaneID)
+	if project := a.ProjectLabel(); project != "" {
+		label += "  " + project
+	}
+	return label
+}
+
+// ProjectLabel keeps agent lists useful without filling a popup with full paths.
+func (a Agent) ProjectLabel() string {
+	path := a.Foreground
+	if path == "" {
+		path = a.CWD
+	}
+	path = strings.Trim(strings.ReplaceAll(path, `\`, "/"), "/")
+	if path == "" {
+		return ""
+	}
+	parts := strings.Split(path, "/")
+	if len(parts) > 2 {
+		parts = parts[len(parts)-2:]
+	}
+	return strings.Join(parts, "/")
 }
 
 type Commander interface {

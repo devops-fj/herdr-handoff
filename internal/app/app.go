@@ -172,7 +172,8 @@ func (a *App) open() error {
 			}
 		}
 	}
-	source, err := chooseAgent(reader, a.Out, "Source agent", agents, defaultSource, "")
+	sourceWorkspace := workspaceForPane(agents, defaultSource)
+	source, err := chooseAgent(reader, a.Out, "Source agent", agents, defaultSource, "", sourceWorkspace)
 	if err != nil {
 		return err
 	}
@@ -184,7 +185,7 @@ func (a *App) open() error {
 			break
 		}
 	}
-	target, err := chooseAgent(reader, a.Out, "Target agent", targetAgents, defaultTarget, source.PaneID)
+	target, err := chooseAgent(reader, a.Out, "Target agent", targetAgents, defaultTarget, source.PaneID, source.Workspace)
 	if err != nil {
 		return err
 	}
@@ -232,25 +233,19 @@ func (a *App) open() error {
 	return nil
 }
 
-func chooseAgent(reader *bufio.Reader, out io.Writer, title string, agents []herdr.Agent, defaultPane, excludePane string) (herdr.Agent, error) {
-	var choices []herdr.Agent
-	defaultIndex := -1
-	fmt.Fprintf(out, "\n%s:\n", title)
-	for _, agent := range agents {
-		if agent.PaneID == excludePane {
-			continue
-		}
-		choices = append(choices, agent)
-		index := len(choices)
-		marker := " "
-		if agent.PaneID == defaultPane {
-			marker = "*"
-			defaultIndex = index - 1
-		}
-		fmt.Fprintf(out, "  %s %2d. %s\n", marker, index, agent.Label())
+func chooseAgent(reader *bufio.Reader, out io.Writer, title string, agents []herdr.Agent, defaultPane, excludePane, workspace string) (herdr.Agent, error) {
+	all := eligibleAgents(agents, excludePane)
+	if len(all) == 0 {
+		return herdr.Agent{}, fmt.Errorf("no eligible agents for %s", strings.ToLower(title))
 	}
+	choices := agentsInWorkspace(all, workspace)
+	if len(choices) == 0 {
+		choices = all
+	}
+	query := ""
 	for {
-		prompt := "Select a number"
+		defaultIndex := printAgentChoices(out, title, choices, defaultPane, len(all)-len(choices), query)
+		prompt := "Select a number, /text to search all, or a to show all"
 		if defaultIndex >= 0 {
 			prompt += fmt.Sprintf(" [%d]", defaultIndex+1)
 		}
@@ -261,12 +256,102 @@ func chooseAgent(reader *bufio.Reader, out io.Writer, title string, agents []her
 		if line == "" && defaultIndex >= 0 {
 			return choices[defaultIndex], nil
 		}
+		if strings.EqualFold(line, "a") {
+			choices = all
+			query = ""
+			continue
+		}
+		if strings.HasPrefix(line, "/") {
+			query = strings.TrimSpace(strings.TrimPrefix(line, "/"))
+			if query == "" {
+				fmt.Fprintln(out, "Enter a search term after /, for example /reviewer.")
+				continue
+			}
+			choices = filterAgents(all, query)
+			if len(choices) == 0 {
+				fmt.Fprintf(out, "No agents match %q. Try another search or enter a.\n", query)
+				choices = agentsInWorkspace(all, workspace)
+				if len(choices) == 0 {
+					choices = all
+				}
+				query = ""
+			}
+			continue
+		}
 		selected, err := strconv.Atoi(line)
 		if err == nil && selected >= 1 && selected <= len(choices) {
 			return choices[selected-1], nil
 		}
-		fmt.Fprintln(out, "Enter one of the listed numbers.")
+		fmt.Fprintln(out, "Enter a listed number, /text, or a.")
 	}
+}
+
+func eligibleAgents(agents []herdr.Agent, excludePane string) []herdr.Agent {
+	result := make([]herdr.Agent, 0, len(agents))
+	for _, agent := range agents {
+		if agent.PaneID != excludePane {
+			result = append(result, agent)
+		}
+	}
+	return result
+}
+
+func agentsInWorkspace(agents []herdr.Agent, workspace string) []herdr.Agent {
+	if workspace == "" {
+		return nil
+	}
+	var result []herdr.Agent
+	for _, agent := range agents {
+		if agent.Workspace == workspace {
+			result = append(result, agent)
+		}
+	}
+	return result
+}
+
+func printAgentChoices(out io.Writer, title string, choices []herdr.Agent, defaultPane string, hidden int, query string) int {
+	fmt.Fprintf(out, "\n%s", title)
+	if query != "" {
+		fmt.Fprintf(out, " — matches for %q", query)
+	}
+	fmt.Fprintln(out, ":")
+	defaultIndex := -1
+	for i, agent := range choices {
+		marker := " "
+		if agent.PaneID == defaultPane {
+			marker = "*"
+			defaultIndex = i
+		}
+		fmt.Fprintf(out, "  %s %2d. %s\n", marker, i+1, agent.Label())
+	}
+	if hidden > 0 {
+		fmt.Fprintf(out, "  %d agent(s) outside this view; use /text to search or a to show all.\n", hidden)
+	}
+	return defaultIndex
+}
+
+func filterAgents(agents []herdr.Agent, query string) []herdr.Agent {
+	query = strings.ToLower(query)
+	var result []herdr.Agent
+	for _, agent := range agents {
+		haystack := strings.ToLower(strings.Join([]string{
+			agent.Name, agent.Kind, agent.Status, agent.CWD, agent.Foreground,
+			agent.Workspace, agent.TabID, agent.PaneID, agent.ProjectLabel(),
+		}, " "))
+		if strings.Contains(haystack, query) {
+			result = append(result, agent)
+		}
+	}
+	return result
+}
+
+func workspaceForPane(agents []herdr.Agent, paneID string) string {
+	for _, agent := range agents {
+		if agent.PaneID == paneID {
+			return agent.Workspace
+		}
+	}
+	return ""
 }
 
 func readLine(reader *bufio.Reader, out io.Writer, prompt string) (string, error) {
@@ -326,15 +411,21 @@ func prioritizeTargets(agents []herdr.Agent, source herdr.Agent) []herdr.Agent {
 	result := append([]herdr.Agent(nil), agents...)
 	rank := func(agent herdr.Agent) int {
 		if agent.PaneID == source.PaneID {
-			return 100
+			return 1000
 		}
+		scope := 20
 		if source.Workspace != "" && agent.Workspace == source.Workspace {
-			return 0
+			scope = 0
+		} else if source.CWD != "" && agent.CWD == source.CWD {
+			scope = 10
 		}
-		if source.CWD != "" && agent.CWD == source.CWD {
-			return 1
+		if agent.Name != "" {
+			scope -= 2
 		}
-		return 2
+		if agent.Status == "idle" || agent.Status == "done" {
+			scope--
+		}
+		return scope
 	}
 	for i := 1; i < len(result); i++ {
 		for j := i; j > 0 && rank(result[j]) < rank(result[j-1]); j-- {

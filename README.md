@@ -35,7 +35,7 @@ herdr plugin install devops-fj/herdr-handoff
 Install a pinned release:
 
 ```bash
-herdr plugin install devops-fj/herdr-handoff --ref v0.1.1
+herdr plugin install devops-fj/herdr-handoff --ref v0.2.0
 ```
 
 Open it from Herdr's plugin actions, or invoke the action directly:
@@ -46,6 +46,11 @@ herdr plugin action invoke devops-fj.herdr-handoff.open
 
 The handoff opens in a local popup. Select the source and target agents, add an
 optional note, review the exact prompt, and type `SEND` to deliver it.
+
+The interactive picker starts with agents in the current workspace and shows a
+compact project path so similarly named agents remain distinguishable. Enter
+`/reviewer`, `/categraf`, or another search term to find agents across all
+workspaces, or enter `a` to show every live agent.
 
 ## CLI
 

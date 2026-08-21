@@ -1,6 +1,6 @@
 id = "devops-fj.herdr-handoff"
 name = "Herdr Handoff"
-version = "0.1.1"
+version = "0.2.0"
 min_herdr_version = "0.7.5"
 description = "Preview and send local context from one Herdr coding agent to another."
 platforms = ["linux", "macos", "windows"]
