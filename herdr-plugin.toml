@@ -1,0 +1,21 @@
+id = "devops-fj.herdr-handoff"
+name = "Herdr Handoff"
+version = "0.1.0"
+min_herdr_version = "0.7.5"
+description = "Preview and send local context from one Herdr coding agent to another."
+platforms = ["linux", "macos", "windows"]
+
+[[build]]
+command = ["go", "build", "-trimpath", "-o", "bin/herdr-handoff", "./cmd/herdr-handoff"]
+
+[[actions]]
+id = "open"
+title = "Hand off to another agent"
+contexts = ["global", "workspace", "tab", "pane", "selection"]
+command = ["herdr", "plugin", "pane", "open", "--plugin", "devops-fj.herdr-handoff", "--entrypoint", "handoff"]
+
+[[panes]]
+id = "handoff"
+title = "Agent handoff"
+placement = "popup"
+command = ["bin/herdr-handoff", "open"]
