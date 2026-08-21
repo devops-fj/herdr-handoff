@@ -6,6 +6,13 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-21
+
+### Fixed
+
+- Resolve the popup executable relative to the plugin root so Herdr 0.7.5 can
+  launch the handoff pane after a local link or marketplace installation.
+
 ## [0.1.0] - 2026-08-21
 
 ### Added
@@ -18,6 +25,6 @@ and the project follows [Semantic Versioning](https://semver.org/).
 - Herdr plugin action and popup entrypoints.
 - Cross-platform CI and GitHub Release automation.
 
-[Unreleased]: https://github.com/devops-fj/herdr-handoff/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/devops-fj/herdr-handoff/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/devops-fj/herdr-handoff/releases/tag/v0.1.1
 [0.1.0]: https://github.com/devops-fj/herdr-handoff/releases/tag/v0.1.0
-

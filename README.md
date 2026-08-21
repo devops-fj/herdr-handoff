@@ -35,7 +35,7 @@ herdr plugin install devops-fj/herdr-handoff
 Install a pinned release:
 
 ```bash
-herdr plugin install devops-fj/herdr-handoff --ref v0.1.0
+herdr plugin install devops-fj/herdr-handoff --ref v0.1.1
 ```
 
 Open it from Herdr's plugin actions, or invoke the action directly:
